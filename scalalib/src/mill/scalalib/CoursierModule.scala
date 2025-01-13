@@ -212,6 +212,16 @@ object CoursierModule {
         artifactTypes: Option[Set[coursier.Type]] = None,
         resolutionParamsMapOpt: Option[ResolutionParams => ResolutionParams] = None
     ): Agg[PathRef] = {
+      resolveDependenciesFiles(deps,sources, artifactTypes, resolutionParamsMapOpt)
+        .map(_._2)
+    }
+
+    def resolveDependenciesFiles[T: CoursierModule.Resolvable](
+        deps: IterableOnce[T],
+        sources: Boolean = false,
+        artifactTypes: Option[Set[coursier.Type]] = None,
+        resolutionParamsMapOpt: Option[ResolutionParams => ResolutionParams] = None
+    ): Agg[(Dependency,PathRef)] = {
       Lib.resolveDependencies(
         repositories = repositories,
         deps = deps.map(implicitly[CoursierModule.Resolvable[T]].bind(_, bind)),

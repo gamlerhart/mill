@@ -143,7 +143,7 @@ object Lib {
       ] = None,
       artifactTypes: Option[Set[Type]] = None,
       resolutionParams: ResolutionParams = ResolutionParams()
-  ): Result[Agg[PathRef]] = {
+  ): Result[Agg[(Dependency,PathRef)]] = {
     val depSeq = deps.iterator.toSeq
     mill.util.Jvm.resolveDependencies(
       repositories = repositories,
@@ -156,7 +156,7 @@ object Lib {
       ctx = ctx,
       coursierCacheCustomizer = coursierCacheCustomizer,
       resolutionParams = resolutionParams
-    ).map(_.map(_.withRevalidateOnce))
+    ).map(_.map{case (dep, path) => (dep, path.withRevalidateOnce)})
   }
 
   // bin-compat shim
@@ -182,7 +182,7 @@ object Lib {
       coursierCacheCustomizer,
       artifactTypes,
       ResolutionParams()
-    )
+    ).map(_.map(_._2))
 
   @deprecated("Use the override accepting artifactTypes", "Mill after 0.12.0-RC3")
   def resolveDependencies(
@@ -206,7 +206,7 @@ object Lib {
       coursierCacheCustomizer,
       None,
       ResolutionParams()
-    )
+    ).map(_.map(_._2))
 
   def scalaCompilerIvyDeps(scalaOrganization: String, scalaVersion: String): Loose.Agg[Dep] =
     if (ZincWorkerUtil.isDotty(scalaVersion))

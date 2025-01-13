@@ -148,7 +148,7 @@ trait CoursierSupport {
       deprecatedResolveFilter: os.Path => Boolean = _ => true,
       artifactTypes: Option[Set[Type]] = None,
       resolutionParams: ResolutionParams = ResolutionParams()
-  ): Result[Agg[PathRef]] = {
+  ): Result[Agg[(Dependency,PathRef)]] = {
     val resolutionRes = resolveDependenciesMetadataSafe(
       repositories,
       deps,
@@ -186,10 +186,10 @@ trait CoursierSupport {
         case Right(res) =>
           Result.Success(
             Agg.from(
-              res.files
-                .map(os.Path(_))
-                .filter(deprecatedResolveFilter)
-                .map(PathRef(_, quick = true))
+              res.fullDetailedArtifacts
+                .map{case (dep, _,_,Some(path)) => dep->os.Path(path)}
+                .filter{case (_,path)=>deprecatedResolveFilter(path)}
+                .map{case(dep, path) => dep->PathRef(path, quick = true)}
             )
           )
       }
@@ -225,7 +225,7 @@ trait CoursierSupport {
       deprecatedResolveFilter,
       artifactTypes,
       ResolutionParams()
-    )
+    ).map(_.map(_._2))
 
   @deprecated("Use the override accepting artifactTypes", "Mill after 0.12.0-RC3")
   def resolveDependencies(

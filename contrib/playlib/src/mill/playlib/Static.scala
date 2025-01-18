@@ -59,7 +59,7 @@ trait Static extends ScalaModule {
     Lib.resolveDependencies(
       repositoriesTask(),
       webJarDeps()
-    ).map(_.map(_._2))
+    ).map(_.map(_.path))
   }
 
   /**

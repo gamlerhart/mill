@@ -55,13 +55,13 @@ trait CycloneDXModule extends JavaModule {
     String.format("%0" + (digest.length << 1) + "x", new BigInteger(1, digest))
   }
 
-
   def sbom: T[SBOM_JSON] = Target {
     val deps = sbomDeps()
 
     val resolvedDeps = defaultResolver().resolveDependenciesFiles(deps)
 
-    val components = resolvedDeps.map { case (dep, file) =>
+    val components = resolvedDeps.map { dependency =>
+      val dep = dependency.dependency
       Component(
         "library",
         s"pkg:maven/{}/jackson-annotations@2.9.10?type=jar",
@@ -69,7 +69,7 @@ trait CycloneDXModule extends JavaModule {
         dep.module.name.value,
         dep.version,
         dep.module.orgName,
-        Seq(ComponentHash("SHA-256", sha256(file.path)))
+        Seq(ComponentHash("SHA-256", sha256(dependency.path.path)))
       )
     }
     println(components.indexed)

@@ -1,14 +1,11 @@
-package mill.javalib.sbom
-import coursier.core.Resolution
+package mill.contrib.sbom
+
 import mill.*
 import mill.javalib.{BoundDep, JavaModule}
-import mill.scalalib.Lib
 import os.Path
-import upickle.default.ReadWriter
-import upickle.default.macroRW
+import upickle.default.{ReadWriter, macroRW}
 
 import java.math.BigInteger
-import java.nio.channels.FileChannel
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.time.Instant
@@ -44,7 +41,7 @@ object CycloneDXModule {
   implicit val depTrackPayload: ReadWriter[Payload] = macroRW
 }
 trait CycloneDXModule extends JavaModule {
-  import CycloneDXModule._
+  import CycloneDXModule.*
 
   def sbomDeps: T[Agg[BoundDep]] = Target { transitiveRunIvyDeps() ++ transitiveIvyDeps() }
 

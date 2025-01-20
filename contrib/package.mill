@@ -214,5 +214,6 @@ object `package` extends RootModule {
 
   object sbom extends ContribModule {
     def compileModuleDeps = Seq(build.scalalib)
+    def testModuleDeps: Seq[JavaModule] = super.testModuleDeps ++ Seq(build.scalalib)
   }
 }

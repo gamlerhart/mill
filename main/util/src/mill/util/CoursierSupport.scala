@@ -460,6 +460,9 @@ object CoursierSupport {
     // TODO: For review: Inclear to me if that even needs to be an option, or if we can always return a 'revalidate once' path??
     def withRevalidateOnce: ResolvedDependency = copy(path = path.withRevalidateOnce)
   }
+  object ResolvedDependency {
+
+  }
 
   /**
    * A Coursier Cache.Logger implementation that updates the ticker with the count and

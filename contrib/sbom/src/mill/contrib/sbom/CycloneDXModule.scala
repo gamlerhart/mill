@@ -1,7 +1,10 @@
 package mill.contrib.sbom
 
+import coursier.core as cs
+import coursier.core.Configuration
 import mill.*
 import mill.javalib.{BoundDep, JavaModule}
+import mill.util.CoursierSupport.ResolvedDependency
 import os.Path
 import upickle.default.{ReadWriter, macroRW}
 
@@ -43,7 +46,18 @@ object CycloneDXModule {
 trait CycloneDXModule extends JavaModule {
   import CycloneDXModule.*
 
-  def sbomDeps: T[Agg[BoundDep]] = Target { transitiveRunIvyDeps() ++ transitiveIvyDeps() }
+  def resolvedRunIvyDepsDetails(): Task[Agg[ResolvedDependency]] = Task.Anon {
+    defaultResolver().resolveDependenciesFiles(
+      Seq(
+        BoundDep(
+          coursierDependency.withConfiguration(cs.Configuration.runtime),
+          force = false
+        )
+      ),
+      artifactTypes = Some(artifactTypes()),
+      resolutionParamsMapOpt = Some(_.withDefaultConfiguration(cs.Configuration.runtime))
+    )
+  }
 
   private def sha256(f: Path): String = {
     val md = MessageDigest.getInstance("SHA-256")
@@ -53,9 +67,7 @@ trait CycloneDXModule extends JavaModule {
   }
 
   def sbom: T[SBOM_JSON] = Target {
-    val deps = sbomDeps()
-
-    val resolvedDeps = defaultResolver().resolveDependenciesFiles(deps)
+    val resolvedDeps = resolvedRunIvyDepsDetails()()
 
     val components = resolvedDeps.map { dependency =>
       val dep = dependency.dependency

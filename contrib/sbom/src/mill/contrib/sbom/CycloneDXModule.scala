@@ -1,7 +1,6 @@
 package mill.contrib.sbom
 
 import coursier.core as cs
-import coursier.core.Configuration
 import mill.*
 import mill.javalib.{BoundDep, JavaModule}
 import mill.util.CoursierSupport.ResolvedDependency
@@ -34,6 +33,20 @@ object CycloneDXModule {
       description: String,
       hashes: Seq[ComponentHash]
   )
+  object Component {
+    def fromDeps(dependency: ResolvedDependency): Component = {
+      val dep = dependency.dependency
+      Component(
+        "library",
+        s"pkg:maven/${dep.module.organization.value}/${dep.module.name.value}@${dep.version}?type=jar",
+        dep.module.organization.value,
+        dep.module.name.value,
+        dep.version,
+        dep.module.orgName,
+        Seq(ComponentHash("SHA-256", sha256(dependency.path.path)))
+      )
+    }
+  }
 
   implicit val sbomRW: ReadWriter[SBOM_JSON] = macroRW
   implicit val metaRW: ReadWriter[MetaData] = macroRW
@@ -42,28 +55,19 @@ object CycloneDXModule {
 
   case class Payload(project: String, bom: String)
   implicit val depTrackPayload: ReadWriter[Payload] = macroRW
-}
-trait CycloneDXModule extends JavaModule {
-  import CycloneDXModule.*
-
-  def resolvedRunIvyDepsDetails(): Task[Agg[ResolvedDependency]] = Task.Anon {
-    defaultResolver().resolveDependenciesFiles(
-      Seq(
-        BoundDep(
-          coursierDependency.withConfiguration(cs.Configuration.runtime),
-          force = false
-        )
-      ),
-      artifactTypes = Some(artifactTypes()),
-      resolutionParamsMapOpt = Some(_.withDefaultConfiguration(cs.Configuration.runtime))
-    )
-  }
 
   private def sha256(f: Path): String = {
     val md = MessageDigest.getInstance("SHA-256")
     val fileContent = os.read.bytes(f)
     val digest = md.digest(fileContent)
     String.format("%0" + (digest.length << 1) + "x", new BigInteger(1, digest))
+  }
+}
+trait CycloneDXModule extends JavaModule {
+  import CycloneDXModule.*
+
+  def sbomComponents: Task[Agg[Component]] = Task{
+    resolvedRunIvyDepsDetails()().map(Component.fromDeps)
   }
 
   def sbom: T[SBOM_JSON] = Target {
@@ -93,10 +97,23 @@ trait CycloneDXModule extends JavaModule {
     )
   }
 
-  def sbomFile: T[PathRef] = Target {
+  def sbomJsonFile: T[PathRef] = Target {
     val sbomFile = Target.dest / "sbom.json"
     os.write(sbomFile, upickle.default.write(sbom()))
     PathRef(sbomFile)
+  }
+
+  private def resolvedRunIvyDepsDetails(): Task[Agg[ResolvedDependency]] = Task.Anon {
+    defaultResolver().resolveDependenciesFiles(
+      Seq(
+        BoundDep(
+          coursierDependency.withConfiguration(cs.Configuration.runtime),
+          force = false
+        )
+      ),
+      artifactTypes = Some(artifactTypes()),
+      resolutionParamsMapOpt = Some(_.withDefaultConfiguration(cs.Configuration.runtime))
+    )
   }
 
   def uploadSBom(): Command[Unit] = Task.Command {

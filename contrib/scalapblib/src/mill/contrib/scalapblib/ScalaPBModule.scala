@@ -80,7 +80,7 @@ trait ScalaPBModule extends ScalaModule {
       repositoriesTask(),
       Seq(ivy"com.thesamet.scalapb::scalapbc:${scalaPBVersion()}")
         .map(Lib.depToBoundDep(_, "2.13.1"))
-    )
+    ).map(_.map(_.path))
   }
 
   def scalaPBIncludePath: T[Seq[PathRef]] = Task.Sources { Seq.empty[PathRef] }

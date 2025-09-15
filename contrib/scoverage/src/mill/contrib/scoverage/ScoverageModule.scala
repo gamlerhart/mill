@@ -28,7 +28,7 @@ import mill.scalalib.{Dep, DepSyntax, JavaModule, ScalaModule}
  * import mill.contrib.scoverage.ScoverageModule
  *
  * Object foo extends ScoverageModule  {
- *   def scalaVersion = "2.13.15"
+ *   def scalaVersion = "2.13.16"
  *   def scoverageVersion = "2.1.1"
  *
  *   object test extends ScoverageTests with TestModule.ScalaTest {

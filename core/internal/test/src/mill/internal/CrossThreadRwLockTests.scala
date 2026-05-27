@@ -470,7 +470,13 @@ object CrossThreadRwLockTests extends TestSuite {
           case e: Exception => e
         }
       assert(ex.getMessage.contains(
-        "blocked on write lock 'no-wait' PID 7777 'blockerCmd' and --no-wait was set, failing"
+        "blocked on write lock 'no-wait' PID 7777 'blockerCmd'"
+      ))
+      assert(ex.getMessage.contains(
+        Thread.currentThread().toString
+      ))
+      assert(ex.getMessage.contains(
+        "and --no-wait was set, failing"
       ))
 
       first.close()

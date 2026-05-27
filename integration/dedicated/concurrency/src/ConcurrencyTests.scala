@@ -27,11 +27,11 @@ object ConcurrencyTests extends UtestIntegrationTestSuite {
       pid: Long,
       taskName: String
   ): Boolean =
-    launcher.containsLines(blockedLine(command, pid, taskName, "write")) ||
-      launcher.containsLines(blockedLine(command, pid, taskName, "read"))
+    launcher.containsLineStarts(blockedLine(command, pid, taskName, "write")) ||
+      launcher.containsLineStarts(blockedLine(command, pid, taskName, "read"))
 
   private def blockedLine(command: String, pid: Long, taskName: String, kind: String): String =
-    s"blocked on $kind lock '$taskName' PID $pid '$command'"
+    s"blocked on $kind lock '$taskName' PID $pid '$command' Thread "
 
   /**
    * Exact set of "blocked on ... lock ..." lines this launcher emitted.
@@ -40,10 +40,12 @@ object ConcurrencyTests extends UtestIntegrationTestSuite {
    */
   private def contentionMessages(
       launcher: mill.testkit.IntegrationTester.SpawnedProcess
-  ): Set[String] =
+  ): Set[String] = {
     launcher.err.text().linesIterator
       .filter(_.startsWith("blocked on "))
+      .map(l => l.substring(0, l.indexOf("Thread ") + "Thread ".length))
       .toSet
+  }
 
   /**
    * Assert the exact set of contention waits this launcher hit. Both

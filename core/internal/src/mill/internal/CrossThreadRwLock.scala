@@ -35,7 +35,7 @@ class CrossThreadRwLock(
     val labelToken = if (showLabelInMessage) s" '$label'" else ""
     blocker match {
       case Some(h) =>
-        s"blocked on $kindStr lock$labelToken PID ${h.pid} '${h.command}'"
+        s"blocked on $kindStr lock$labelToken PID ${h.pid} '${h.command}' Thread ${h.thread}"
       case None => s"blocked on $kindStr lock$labelToken"
     }
   }
@@ -186,5 +186,5 @@ class CrossThreadRwLock(
 }
 
 object CrossThreadRwLock {
-  case class HolderInfo(pid: Long, command: String)
+  case class HolderInfo(pid: Long, command: String, thread: Thread = Thread.currentThread())
 }

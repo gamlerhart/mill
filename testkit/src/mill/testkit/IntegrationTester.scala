@@ -84,7 +84,7 @@ object IntegrationTester {
     private def chunks: Seq[Either[geny.Bytes, geny.Bytes]] = result.chunks
 
     /**
-     * Returns true iff the given lines appear as exact consecutive lines in
+     * Returns true if the given lines appear as exact consecutive lines in
      * the combined stdout/stderr output. Normalizes backslashes to forward
      * slashes for cross-platform compatibility.
      */
@@ -126,12 +126,22 @@ object IntegrationTester {
       chunks.synchronized(chunks.toSeq)
 
     /**
-     * Returns true iff the given lines appear as exact consecutive lines in
+     * Returns true if the given lines appear as exact consecutive lines in
      * the combined stdout/stderr output. Normalizes backslashes to forward
      * slashes for cross-platform compatibility.
      */
     def containsLines(expectedLines: String*): Boolean =
       IntegrationTester.containsConsecutiveLines(chunksSnapshot, expectedLines)
+
+    /**
+     * Returns true if the given line-starts appear as consecutive lines in
+     * the combined stdout/stderr output. Normalizes backslashes to forward
+     * slashes for cross-platform compatibility.
+     *
+     * Used in places where the lines have non-deterministic output at the end
+     */
+    def containsLineStarts(expectedLineStarts: String*): Boolean =
+      IntegrationTester.containsConsecutiveLineStarts(chunksSnapshot, expectedLineStarts)
 
     /**
      * Asserts that the given lines appear as exact consecutive lines in the
@@ -160,6 +170,19 @@ object IntegrationTester {
   ): Boolean = {
     val actualLines = normalizedLines(chunks)
     actualLines.sliding(expectedLines.size).exists(_ == expectedLines)
+  }
+
+  private def containsConsecutiveLineStarts(
+      chunks: Seq[Either[geny.Bytes, geny.Bytes]],
+      expectedLinesStart: Seq[String]
+  ): Boolean = {
+    val actualLines = normalizedLines(chunks)
+    actualLines.sliding(expectedLinesStart.size)
+      .exists(lines =>
+        lines.zip(expectedLinesStart).forall((line, expectedStart) =>
+          line.startsWith(expectedStart)
+        )
+      )
   }
 
   private def assertConsecutiveLines(
